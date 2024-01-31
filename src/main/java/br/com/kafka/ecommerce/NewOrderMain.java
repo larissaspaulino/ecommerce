@@ -1,5 +1,6 @@
 package br.com.kafka.ecommerce;
 
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -11,15 +12,19 @@ import java.util.concurrent.ExecutionException;
 public class NewOrderMain {
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         var producer = new KafkaProducer<String, String>(properties());
-        var record = new ProducerRecord("ECOMMERCE_NEW_ORDER", "123", "123");
-        var future = producer.send(record, (data, err) -> {
+
+        Callback callback = (data, err) -> {
             if (err != null) {
                 System.out.println(err.getMessage());
             } else {
                 System.out.println("sucesso enviando mensagem: " + data.topic() + ":::partition: " + data.partition() + ":::offset: " + data.offset());
             }
-        });
-        future.get();
+        };
+        var email = "Thank you! We are processing your order!";
+        var record = new ProducerRecord("ECOMMERCE_NEW_ORDER", "123", "123");
+        var emailRecord = new ProducerRecord("ECOMMERCE_SEND_EMAIL", email, email);
+        producer.send(record, callback).get();
+        producer.send(emailRecord, callback).get();
     }
 
     private static Properties properties() {
